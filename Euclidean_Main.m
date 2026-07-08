@@ -1,162 +1,33 @@
-% Main File for Euclidean Distance Matrices Project
+function Euclidean_Main()
+% Euclidean_Main  Entry point for the APPM 3310 lighting coverage explorer.
+%
+% This file intentionally stays small. The project is organized into:
+%   LaunchLightingExplorer.m   one-window interactive UI
+%   BuildLightingModel.m       room -> D, V, falloff, A matrices
+%   SolveLightingPlacement.m   exact BIP solver and greedy fallback
+%   GetMap.m                   built-in gallery maps
+%   RunLightingCase.m          non-UI experiment runner
 
+clc; close all;
 
-% House Cleaning
-clear; clc; close all;
+params.mapId = 'D';
+params.lightStrength = 12.0;
+params.height = 1.25;
+params.threshold = 0.2;
+params.candidateStride = 1;
+params.maxGreedyLights = 40;
+params.useExactSolver = true;
+params.exactCandidateLimit = 300;
+params.exactMaxTime = 45;
+params.checkAlternativeOptima = true;
+params.maxAlternativeSolutions = 3;
+params.launchMapSelector = true;
+params.matrixPreviewLimit = 90;
 
-%% Main Executables
+if params.launchMapSelector
+    LaunchLightingExplorer(params);
+else
+    RunLightingCase(params);
+end
 
-
-mapA = GetMap('A');
-disp(mapA)
-
-mapB = GetMap('B');
-disp(mapB)
-
-mapC = GetMap('C');
-disp(mapC)
-
-mapD = GetMap('D');
-disp(mapD)
-
-Control_0 = GetMap(0);
-disp(Control_0)
-
-Control_1 = GetMap(1);
-disp(Control_1)
-
-
-
-
-
-
-
-
-
-
-
-
-
-%% Functions Section
-
-function [MapOut] = GetMap(i)
-
-	if i == 'A'
-
-		GrabMap = [
-		1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1;
-		1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1;
-		1 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0 1;
-		1 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0 1;
-		1 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 0 1;
-		1 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1;
-		1 1 1 1 1 1 1 1 1 0 0 1 0 0 0 0 0 0 0 1;
-		1 0 0 0 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 1;
-		1 0 0 0 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 1;
-		1 0 0 0 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 1;
-		1 0 0 0 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 1;
-		1 0 0 0 0 0 0 0 1 1 1 1 0 0 0 0 0 0 0 1;
-		1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1;
-		1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1;
-		1 0 0 0 0 1 0 0 0 0 0 0 0 1 1 1 1 1 1 1;
-		1 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 1;
-		1 0 0 0 0 1 0 0 0 0 0 0 0 1 1 1 1 1 0 1;
-		1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0 1;
-		1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0 1;
-		1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-		];
-	
-	elseif i == 'B'
-
-		GrabMap = [
-		1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1;
-		1 0 0 1 0 1 0 0 1 0 0 0 0 0 0 0 0 1 0 1;
-		1 0 0 1 0 1 0 0 1 0 0 0 0 0 0 0 0 1 0 1;
-		1 0 0 1 0 1 0 0 1 0 0 0 0 0 0 0 0 1 0 1;
-		1 0 0 1 0 1 0 0 1 0 0 0 0 0 0 0 0 1 0 1;
-		1 0 0 1 0 1 0 0 1 0 0 0 0 0 0 0 0 1 0 1;
-		1 0 0 1 0 1 0 0 1 0 0 0 0 0 0 0 0 1 0 1;
-		1 0 0 1 0 1 0 0 1 0 1 1 1 1 1 1 0 1 0 1;
-		1 0 0 1 1 1 1 1 1 0 1 0 0 0 0 1 0 1 0 1;
-		1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 1 0 0 0 1;
-		1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 1 0 0 0 1;
-		1 0 0 0 0 0 0 0 1 1 1 1 1 0 0 1 0 0 0 1;
-		1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 1 0 0 0 1;
-		1 1 1 1 1 0 0 0 0 0 1 0 0 0 0 1 0 0 0 1;
-		1 0 0 0 1 0 0 0 0 0 1 0 1 1 1 1 0 0 0 1;
-		1 0 0 0 1 0 0 0 0 0 1 0 1 0 0 0 0 0 0 1;
-		1 0 0 0 0 0 0 0 0 0 1 0 1 0 0 0 0 0 0 1;
-		1 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 1;
-		1 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 1;
-		1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-		];
-	
-	elseif i == 'C'
-
-		GrabMap = [
-		1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1;
-		1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1;
-		1 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 1;
-		1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 1;
-		1 0 0 1 1 1 1 1 0 0 0 0 0 0 0 0 0 1 0 1;
-		1 0 0 1 0 0 0 1 0 0 0 0 0 0 0 0 0 1 0 1;
-		1 0 0 1 0 1 0 1 0 0 0 0 0 0 0 0 0 1 0 1;
-		1 0 0 1 0 1 0 1 0 0 0 0 1 0 1 0 0 1 0 1;
-		1 0 0 0 0 1 0 1 0 0 0 0 1 0 1 0 0 1 0 1;
-		1 0 0 0 0 1 0 1 0 0 0 0 1 0 1 0 0 1 0 1;
-		1 0 0 0 0 1 0 1 0 0 0 0 1 0 1 0 0 0 0 1;
-		1 0 0 0 0 1 0 0 0 0 0 0 1 0 1 0 0 0 0 1;
-		1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 1;
-		1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 1;
-		1 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 1;
-		1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 1;
-		1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 1;
-		1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 1;
-		1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 1;
-		1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-		];
-	
-	elseif i == 'D'
-
-		GrabMap = [
-		1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1;
-		1 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 1;
-		1 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 1;
-		1 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 1;
-		1 0 1 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 1;
-		1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1;
-		1 0 1 0 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 1;
-		1 0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1;
-		1 0 1 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1;
-		1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1;
-		1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1;
-		1 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 1;
-		1 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 1;
-		1 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 1;
-		1 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 1;
-		1 0 0 0 0 0 1 0 0 0 1 0 0 1 0 1 0 0 0 1;
-		1 0 0 0 0 0 1 0 0 0 1 0 0 1 0 1 0 0 0 1;
-		1 0 0 0 0 0 1 0 0 0 1 0 0 1 0 1 0 0 0 1;
-		1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1;
-		1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-		];
-	
-	elseif i == 0
-
-		% Control_0: Empty room with only perimeter walls
-		Control_0 = zeros(20,20);
-		Control_0(1,:) = 1;
-		Control_0(end,:) = 1;
-		Control_0(:,1) = 1;
-		Control_0(:,end) = 1;
-		GrabMap = Control_0;
-	
-	elseif i == 1
-
-		% Control_1: all wall nodes
-		GrabMap = ones(20,20);
-
-	end
-
-	MapOut = GrabMap;
 end

@@ -1,12 +1,36 @@
 # Euclidean Distance Matrices for Illumination Coverage
 
-This repository is for our APPM 3310 Matrix Methods course project. The project explores how Euclidean distance matrices can be used to model lighting coverage in a two-dimensional space.
+APPM 3310 Matrix Methods project for modeling gallery lighting with matrices.
 
-The main idea is to represent a room or gallery-like space using sample points, then define possible locations for light fixtures. By computing the distances between each light fixture and each sample point, we can build a Euclidean distance matrix. From there, we can estimate how much light reaches each point using a simplified light fall-off model.
+The code converts a room map into sample points, candidate light-pole positions,
+a Euclidean distance matrix `D`, a wall visibility matrix `V`, and an intensity
+matrix `A`. It then selects lights with either an exact binary integer program
+or a greedy fallback and visualizes the result.
 
-The goal of the project is to investigate how matrix methods can help determine a small number of light fixtures needed to illuminate the entire space above a chosen minimum intensity threshold.
+## Run
 
-This project connects to topics such as Euclidean distance matrices, matrix multiplication, vectors and norms, systems of inequalities, and matrix-based modeling. It is also related to coverage problems such as the Art Gallery Problem, where the goal is to cover a space using the fewest number of guards or sensors.
+Run `Euclidean_Main.m` in MATLAB to open the interactive lighting explorer:
+
+```matlab
+Euclidean_Main
+```
+
+## File Layout
+
+* `Euclidean_Main.m` sets default parameters and starts the program.
+* `LaunchLightingExplorer.m` contains the tabbed user interface and plots.
+* `BuildLightingModel.m` builds the matrices `D`, `V`, falloff, and `A`.
+* `SolveLightingPlacement.m` solves the exact or greedy placement problem.
+* `GetMap.m` stores the built-in room maps.
+* `RunLightingCase.m` runs one map without the UI.
+* `PrintRunSummary.m`, `AvailableMaps.m`, and `FormatMapId.m` are small helpers.
+
+## Solver Note
+
+If MATLAB has `intlinprog`, the solver can certify the minimum number of
+selected grid lights. Without `intlinprog`, the code uses a greedy
+deficit-reduction heuristic. The greedy solution can cover the room, but it is
+not a mathematical proof of minimality.
 
 ## Authors
 
